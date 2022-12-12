@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: moviereview
+  name: moviereview
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: moviereview
+  template:
+    metadata:
+      labels:
+        app: moviereview
+    spec:
+      containers:
+      - image: wi-reviewz/ms-moviereview:0.0.11-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        name: ms-moviereview
+        ports:
+          - containerPort: 8081
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: moviereview
+spec:
+  ports:
+  - port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    app: moviereview
+ 

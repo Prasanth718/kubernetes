@@ -1,0 +1,105 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: Truelover123@sai
+      MYSQL_DATABASE: movieReviewms
+  jms:
+    image: apache/activemq-artemis
+    ports:
+      - '8161:8161'
+      - '61616:61616'
+  movieReviewms:
+    image: docker.io/wi-reviewz/mrv2-moviereview:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports:
+      - '8081:8081'
+    networks:
+      - movie-network
+    depends_on:
+      - jms
+      - discovery-server
+    environment:
+      SPRING_DATASOURCE_USER: root
+      SPRING_DATASOURCE_PASSWORD: Truelover123@sai
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
+    restart: on-failure
+  userms:
+    image: docker.io/wi-reviewz/mrv2-userms:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports:
+      - '8083:8083'
+    networks:
+      - movie-network
+    depends_on:
+      - movieReviewms
+      - jms
+      - discovery-server
+    environment:
+      SPRING_DATASOURCE_USER: root
+      SPRING_DATASOURCE_PASSWORD: Truelover123@sai
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
+    restart: on-failure
+  adminms:
+    image: docker.io/wi-reviewz/mrv2-adminms:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports:
+      - '8082:8082'
+    networks:
+      - movie-network
+    depends_on:
+      - userms
+      - movieReviewms
+      - jms
+      - discovery-server
+    environment:
+      SPRING_DATASOURCE_USER: root
+      SPRING_DATASOURCE_PASSWORD: Truelover123@sai
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
+    restart: on-failure
+  api-gateway:
+    image: docker.io/efactboie/mrv2-api-gateway:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports:
+      - '8080:8080'
+    networks:
+      - movie-network
+    depends_on:
+      - jms
+      - movieReviewms
+      - userms
+      - adminms
+      - discovery-server
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
+    restart: on-failure
+  discovery-server:
+    image: docker.io/wi-reviewz/mrv2-discovery-server:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports:
+      - '9000:9000'
+    networks:
+      - movie-network
+    restart: on-failure
+  zipkin-server:
+    image: openzipkin/zipkin:2.23.19
+    mem_limit: 300m
+    ports:
+      - '9411:9411'
+    networks:
+      - movie-network
+    restart: on-failure
+networks:
+  movie-network:
+    
