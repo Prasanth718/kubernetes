@@ -1,105 +1,105 @@
 version: '3.8'
 services:
-  mysql:
-    image: mysql:latest
+  mysqldb:
+    container_name: mysqldb
+    image: "mysql:latest"
+    ports: 
+      - 3317:3306
     environment:
-      MYSQL_ROOT_PASSWORD: Truelover123@sai
-      MYSQL_DATABASE: movieReviewms
-  jms:
-    image: apache/activemq-artemis
-    ports:
-      - '8161:8161'
-      - '61616:61616'
+      MYSQL_DATABASE: testdb
+      MYSQL_ROOT_PASSWORD: nps123
   movieReviewms:
-    image: docker.io/wi-reviewz/mrv2-moviereview:0.0.1-SNAPSHOT
+    image: docker.io/library/wi-reviewz-mrv2-moviereview:0.0.1-SNAPSHOT
     mem_limit: 700m
     ports:
       - '8081:8081'
     networks:
       - movie-network
     depends_on:
-      - jms
+      - mysqldb
       - discovery-server
     environment:
-      SPRING_DATASOURCE_USER: root
-      SPRING_DATASOURCE_PASSWORD: Truelover123@sai
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: nps123
+      MYSQL_PASSWORD: nps123
       SPRING_JPA_HIBERNATE_DDL-AUTO: update
-      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC
+      MYSQL_URL: jdbc:mysql://mysqldb:3317/testdb?serverTimezone=UTC
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
       SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
-    restart: on-failure
+    restart: always
   userms:
-    image: docker.io/wi-reviewz/mrv2-userms:0.0.1-SNAPSHOT
+    image: docker.io/library/wi-reviewz-mrv2-userms:0.0.1-SNAPSHOT
     mem_limit: 700m
     ports:
       - '8083:8083'
     networks:
       - movie-network
     depends_on:
-      - movieReviewms
-      - jms
+      - mysqldb
       - discovery-server
+      - movieReviewms
     environment:
-      SPRING_DATASOURCE_USER: root
-      SPRING_DATASOURCE_PASSWORD: Truelover123@sai
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: nps123
+      MYSQL_PASSWORD: nps123
       SPRING_JPA_HIBERNATE_DDL-AUTO: update
-      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC
+      MYSQL_URL: jdbc:mysql://mysqldb:3317/testdb?serverTimezone=UTC
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
       SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
-    restart: on-failure
+    restart: always
   adminms:
-    image: docker.io/wi-reviewz/mrv2-adminms:0.0.1-SNAPSHOT
+    image: docker.io/library/wi-reviewz-mrv2-adminms:0.0.1-SNAPSHOT
     mem_limit: 700m
     ports:
       - '8082:8082'
     networks:
       - movie-network
     depends_on:
+      - mysqldb
+      - discovery-server
       - userms
       - movieReviewms
-      - jms
-      - discovery-server
     environment:
-      SPRING_DATASOURCE_USER: root
-      SPRING_DATASOURCE_PASSWORD: Truelover123@sai
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: nps123
+      MYSQL_PASSWORD: nps123
       SPRING_JPA_HIBERNATE_DDL-AUTO: update
-      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?serverTimezone=UTC
+      MYSQL_URL: jdbc:mysql://mysqldb:3317/testdb?serverTimezone=UTC
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
       SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
-    restart: on-failure
+    restart: always
   api-gateway:
-    image: docker.io/efactboie/mrv2-api-gateway:0.0.1-SNAPSHOT
+    image: docker.io/library/wi-reviewz-mrv2-api-gateway:0.0.1-SNAPSHOT
     mem_limit: 700m
     ports:
       - '8080:8080'
     networks:
       - movie-network
     depends_on:
-      - jms
+      - discovery-server
       - movieReviewms
       - userms
       - adminms
-      - discovery-server
     environment:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://discovery-server:9000/eureka
       SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411
-    restart: on-failure
+    restart: always
   discovery-server:
-    image: docker.io/wi-reviewz/mrv2-discovery-server:0.0.1-SNAPSHOT
+    image: docker.io/library/wi-reviewz-mrv2-discovery-server:0.0.1-SNAPSHOT
     mem_limit: 700m
     ports:
       - '9000:9000'
     networks:
       - movie-network
-    restart: on-failure
+    restart: always
   zipkin-server:
-    image: openzipkin/zipkin:2.23.19
+    image: openzipkin/zipkin:latest
     mem_limit: 300m
     ports:
       - '9411:9411'
     networks:
       - movie-network
-    restart: on-failure
+    restart: always
 networks:
   movie-network:
     
